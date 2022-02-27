@@ -1,22 +1,18 @@
-/*const api = '1732750-d45b5378879dle877cdld35a6';
-const options = {
-    method: "GET"
-  };
-
-fetch(`https://pixabay.com/api/?key=${api}&q=flores+amarillas&image_type=foto`)
-.then((response) => response.json())
-.then(data => {
-    console.log(data)
-})*/
-
-//
 const formulario = document.getElementById('formulario');
 const resultado = document.getElementById('resultado');
+
+//Pagination
 const pagination = document.getElementById('pagination');
+const registroPagina = 40;
+let totalPaginas;
+let iterador;
+let paginaActual = 1;
 
 
 window.onload = () => {
-  formulario.addEventListener('submit', validarFormulario)
+  formulario.addEventListener('submit', validarFormulario);
+  //pagination.addEventListener('click', direccionPaginacion);
+
 }
 
 function validarFormulario(e){
@@ -25,17 +21,17 @@ function validarFormulario(e){
   const terminoBusqueda = document.getElementById('search').value;
     
   if(terminoBusqueda === ''){
-    showAlert('warning')
-  }else{
-    searchIMages(terminoBusqueda)
-    clearFormulario();
+    showAlert('warning');
+    return;
   }
+
+  searchImages();
+  clearFormulario();
 
 }
 
 function showAlert(className) {
   const existAlert = document.querySelector('.alert');
-
   if(!existAlert){
     const div = document.createElement('div');
   div.className = `alert alert-${className} mt-4`;
@@ -48,8 +44,6 @@ function showAlert(className) {
 
   setTimeout(() => document.querySelector('.alert').remove(), 3000)
   }
-
-
   
 }
 
@@ -57,20 +51,21 @@ function clearFormulario(){
   document.getElementById('search').value = '';
 }
 
-function searchIMages(termino){
+function searchImages(){
+
+  const terminoBusqueda = document.getElementById('search').value;
   const key = '1732750-d45b5378879d1e877cd1d35a6';
-  const pag = 15;
-  const url = `https://pixabay.com/api/?key=${key}&q=${termino}&per_page=${pag}`;
+  const url = `https://pixabay.com/api/?key=${key}&q=${terminoBusqueda}&per_page=${registroPagina}&page=${paginaActual}`;
 
   fetch(url)
    .then(response => response.json())
    .then(data => {
-    console.log(data);
-    const totalPaginas = calcPaginas(data.totalHits);
-    console.log(totalPaginas);
      const imagenes = data.hits;
+     totalPaginas = calcPaginas(data.totalHits);
 
-     /*let div =  ' ';
+     /*
+     ////Método mostrar images - FORMA 1
+     let div =  ' ';
      imagenes.forEach((value, index) => {
        div += `
        <div class="col"
@@ -88,12 +83,13 @@ function searchIMages(termino){
      resultado.innerHTML = div;*/
 
      showImages(imagenes);
-   });
+     
+    });
 
 
 }
 
-//Método mostrar images
+//Método mostrar images - FORMA 2
 function showImages(imgs){
   while(resultado.firstChild){
     resultado.removeChild(resultado.firstChild);
@@ -111,10 +107,65 @@ function showImages(imgs){
     `
     resultado.appendChild(div);
   });
+
+  
+  //Limpiar paginador
+     while(pagination.firstChild){
+       pagination.removeChild(pagination.firstChild)
+      }
+     //General el nuevo html
+     imprimirPaginador();
+     
+  
 }
 
-//Pagination -Registro por página
+//Generador que va registrar la cantidad de elementos de acuerdo a las páginas
+function *crearPaginador(total){
+  for(let i = 1; i <= total; i++){
+    //para registrat los valores internamente
+    yield i;
+  }
+}
+
+//Método de registro por página
 function calcPaginas(total){
-  const registroPagina = 40;
   return parseInt(Math.ceil(total / registroPagina));
 }
+
+
+function imprimirPaginador(){
+  iterador = crearPaginador(totalPaginas);
+  console.log(iterador);
+
+  while(true){
+    const { value, done } = iterador.next();
+    if(done) return;
+
+    //Caso contrario, genera un bóton por cada elemento
+    const btn = document.createElement('a');
+    //btn.href = "#";
+    btn.dataset.pagina = value;
+    btn.textContent = value;
+    btn.className = 'siguiente btn btn-outline-primary'
+
+    btn.onclick = () => {
+      paginaActual = value;
+      console.log(paginaActual)
+      searchImages();
+    }
+
+    pagination.appendChild(btn);
+  }
+}
+
+
+
+
+/*function direccionPaginacion(e) {
+  if(e.target.classList.contains('siguiente')) {
+
+      paginaActual= Number( e.target.dataset.pagina);
+      searchImages();
+      formulario.scrollIntoView();
+  }
+}*/
